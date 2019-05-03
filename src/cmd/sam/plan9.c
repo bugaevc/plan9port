@@ -56,7 +56,7 @@ getuser(void)
 	int fd;
 
 	if(user[0] == 0){
-		fd = open("/dev/user", 0);
+		fd = open("/dev/user", OREAD);
 		if(fd<0 || read(fd, user, sizeof user-1)<=0)
 			strcpy(user, "none");
 		close(fd);
