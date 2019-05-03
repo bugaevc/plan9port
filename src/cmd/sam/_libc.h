@@ -22,14 +22,6 @@
 #define SET(a)
 
 enum {
-	OREAD = 0,
-	OWRITE = 1,
-	ORDWR = 2,
-	OCEXEC = 4,
-	ORCLOSE = 8
-};
-
-enum {
 	ERRMAX = 255
 };
 
