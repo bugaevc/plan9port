@@ -45,6 +45,11 @@ case "$tag" in
 		;;
 	esac
 	;;
+*GNU*)
+	ld=${CC9:-gcc}
+	userpath=true
+	extralibs="$extralibs -lpthread -lutil"
+	;;
 *Darwin*x86_64*)
 	ld="${CC9:-gcc} -m64"
 	;;

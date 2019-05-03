@@ -79,6 +79,7 @@ useclang()
 
 tag="${SYSNAME:-`uname`}-${OBJTYPE:-`uname -m`}-${CC9:-cc}"
 case "$tag" in
+*GNU*)  usegcc ;;
 *FreeBSD*gcc*)	usegcc ;;
 *FreeBSD*clang*)	useclang ;;
 *DragonFly*|*BSD*)	usegcc ;;
