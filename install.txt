@@ -17,7 +17,7 @@
           runs on FreeBSD (x86, x86-64), Linux (x86, x86-64, PowerPC
           and ARM), Mac OS X (x86, x86-64, and PowerPC), NetBSD (x86
           and PowerPC), OpenBSD (x86 and PowerPC), Dragonfly BSD
-          (x86-64), and SunOS (x86-64 and Sparc).
+          (x86-64), GNU Hurd (x86), and SunOS (x86-64 and Sparc).
 
         Commands
           Plan 9 from User Space expects its own directory tree, con-
