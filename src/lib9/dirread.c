@@ -18,6 +18,85 @@ mygetdents(int fd, struct dirent *buf, int n)
 	nn = getdirentries(fd, (void*)buf, n, &off);
 	return nn;
 }
+#elif defined (__GNU__)
+
+#include <mach/mach_types.h>
+#include <mach/message.h>
+#include <hurd/fd.h>
+#include <hurd/port.h>
+
+/* Hack: in order to read a directory sequentially, store DIRs for them.
+   Each DIR wraps a *duplicate* of the original file descriptor, because
+   the original file descriptor can be closed and reused by the outside code.
+   In order to be able to identify directories across fd reuse, also store
+   the Mach port that the fd wraps. */
+
+#define NFDS 1024
+
+static struct dirfd {
+	/* dir will be NULL (and the duplicate fd closed) if the end has been reached */
+	DIR *dir;
+	/* the Mach port that this fd wraps */
+	mach_port_t identity;
+} dirfds[NFDS];
+
+static int
+mygetdents(int fd, struct dirent *buf, int n)
+{
+	/* find our dirfd entry */
+	struct dirfd *dirfd = &dirfds[fd];
+
+	/* check if dirfd refers to the same file */
+	int valid = 0;
+	if (dirfd->identity != 0) {
+		struct hurd_fd *d = _hurd_fd_get(fd);
+		valid = HURD_PORT_USE(&d->port, port == dirfd->identity);
+	}
+
+	/* if it does and the DIR is closed, we've reached the end already */
+	if (valid && dirfd->dir == NULL) {
+		return 0;
+	}
+
+	/* if it does not, we have to create a new DIR */
+	if (!valid) {
+		/* if there's an old DIR, clean it up */
+		if (dirfd->dir != NULL) {
+			closedir(dirfd->dir);
+		}
+		/* create a duplicate file descriptor and wrap it into a DIR */
+		int dupfd = dup(fd);
+		dirfd->dir = fdopendir(dupfd);
+		/* save the identity */
+		struct hurd_fd *d = _hurd_fd_get(dupfd);
+		HURD_PORT_USE(&d->port, dirfd->identity = port);
+	}
+
+	char * const base = (char *) buf;
+	char *ptr = (char *) buf;
+
+	for (;;) {
+		struct dirent *ent = readdir(dirfd->dir);
+		if (ent == NULL) {
+			/* we've reached the end, clean up and break out */
+			closedir(dirfd->dir);
+			dirfd->dir = NULL;
+			break;
+		}
+		if (ptr + ent->d_reclen > base + n) {
+			/* no more space */
+			break;
+		}
+
+		/* copy the entry out and move to the next one */
+		memcpy(ptr, ent, ent->d_reclen);
+		ptr += ent->d_reclen;
+	}
+
+	/* return the number of bytes written */
+	return ptr - base;
+}
+
 #elif defined(__APPLE__) 
 static int
 mygetdents(int fd, struct dirent *buf, int n)
